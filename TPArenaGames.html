@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPArena</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7b2cff">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- Futuristic Font -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Orbitron',sans-serif;
+}
+
+body{
+background:linear-gradient(180deg,#0f0024,#190038,#120026);
+color:white;
+text-align:center;
+min-height:100vh;
+transition:0.5s;
+}
+
+/* HEADER */
+
+.header{
+padding:40px 20px;
+}
+
+.logo{
+font-size:50px;
+font-weight:900;
+background:linear-gradient(90deg,#6a00ff,#00c3ff);
+-webkit-background-clip:text;
+color:transparent;
+letter-spacing:3px;
+text-shadow:0 0 25px #6a00ff;
+}
+
+.tagline{
+margin-top:10px;
+opacity:0.8;
+}
+
+.points{
+margin-top:20px;
+font-size:18px;
+background:linear-gradient(90deg,#6a00ff,#00c3ff);
+padding:10px 20px;
+border-radius:30px;
+display:inline-block;
+}
+
+/* MENU */
+
+.menu{
+padding:20px;
+}
+
+.menu button{
+width:90%;
+max-width:400px;
+margin:15px;
+padding:20px;
+border:none;
+border-radius:20px;
+background:rgba(255,255,255,0.05);
+color:white;
+font-size:18px;
+cursor:pointer;
+box-shadow:0 0 20px #6a00ff;
+transition:0.3s;
+}
+
+.menu button:hover{
+transform:scale(1.05);
+background:linear-gradient(90deg,#6a00ff,#00c3ff);
+}
+
+/* GAME SECTION */
+
+.game{
+display:none;
+padding:30px;
+animation:fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(20px);}
+to{opacity:1;transform:translateY(0);}
+}
+
+.backBtn{
+margin-top:20px;
+padding:10px 20px;
+border:none;
+border-radius:20px;
+background:#6a00ff;
+color:white;
+cursor:pointer;
+}
+
+/* LUCKY DRAW */
+
+.slot{
+font-size:50px;
+margin:20px;
+}
+
+.spinBtn{
+padding:15px 40px;
+border:none;
+border-radius:30px;
+background:linear-gradient(90deg,#6a00ff,#00c3ff);
+color:white;
+font-size:18px;
+cursor:pointer;
+box-shadow:0 0 20px #00c3ff;
+}
+
+/* HANGMAN */
+
+.hangmanCanvas{
+margin:20px auto;
+background:#111;
+border-radius:10px;
+}
+
+.letters button{
+margin:5px;
+padding:8px;
+border:none;
+border-radius:8px;
+background:#6a00ff;
+color:white;
+cursor:pointer;
+}
+
+/* RIDDLE */
+
+.riddleBox{
+margin-top:20px;
+font-size:18px;
+}
+
+input{
+margin-top:15px;
+padding:10px;
+border-radius:10px;
+border:none;
+width:200px;
+}
+
+.submitBtn{
+padding:10px 20px;
+border:none;
+border-radius:20px;
+background:#00c3ff;
+color:white;
+margin-left:10px;
+cursor:pointer;
+}
+
+/* MOBILE FIX */
+
+@media(max-width:600px){
+.logo{font-size:35px;}
+.menu button{font-size:16px;}
+}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+<div class="logo">TPArena</div>
+<div class="tagline">ENTER • RISK • WIN</div>
+<div class="points">💎 TPoints: <span id="points">20</span></div>
+</div>
+
+<div class="menu">
+<button onclick="openGame('lucky')">🎰 Lucky Draw</button>
+<button onclick="openGame('hangman')">🪓 Hangman</button>
+<button onclick="openGame('riddle')">🧠 Riddle Station</button>
+</div>
+
+<!-- LUCKY DRAW -->
+<div id="lucky" class="game">
+<h2>🎰 Lucky Draw</h2>
+<div class="slot" id="slot1">?</div>
+<div class="slot" id="slot2">?</div>
+<div class="slot" id="slot3">?</div>
+<button class="spinBtn" onclick="spin()">SPIN</button>
+<div id="result"></div>
+<button class="backBtn" onclick="closeGame()">Back</button>
+</div>
+
+<!-- HANGMAN -->
+<div id="hangman" class="game">
+<h2>🪓 Hangman</h2>
+<canvas id="canvas" width="200" height="250" class="hangmanCanvas"></canvas>
+<div id="word"></div>
+<div class="letters" id="letters"></div>
+<div id="hangResult"></div>
+<button class="backBtn" onclick="closeGame()">Back</button>
+</div>
+
+<!-- RIDDLE -->
+<div id="riddle" class="game">
+<h2>🧠 Riddle Station</h2>
+<div class="riddleBox" id="riddleText"></div>
+<input type="text" id="riddleInput" placeholder="Your answer">
+<button class="submitBtn" onclick="checkRiddle()">Submit</button>
+<div id="riddleResult"></div>
+<button class="backBtn" onclick="closeGame()">Back</button>
+</div>
+
+<script>
+
+let points=20;
+
+function updatePoints(){
+document.getElementById("points").innerText=points;
+}
+
+function openGame(id){
+document.querySelectorAll(".game").forEach(g=>g.style.display="none");
+document.getElementById(id).style.display="block";
+}
+
+function closeGame(){
+document.querySelectorAll(".game").forEach(g=>g.style.display="none");
+}
+
+/* LUCKY DRAW */
+
+const symbols=["🍒","💎","⭐","7️⃣"];
+
+function spin(){
+if(points<5){alert("Need 5 TPoints to spin!");return;}
+points-=5;
+updatePoints();
+
+let s1=symbols[Math.floor(Math.random()*symbols.length)];
+let s2=symbols[Math.floor(Math.random()*symbols.length)];
+let s3=symbols[Math.floor(Math.random()*symbols.length)];
+
+slot1.innerText=s1;
+slot2.innerText=s2;
+slot3.innerText=s3;
+
+if(s1===s2 && s2===s3){
+points+=30;
+result.innerText="JACKPOT! +30 TPoints!";
+}else{
+result.innerText="Try Again!";
+}
+updatePoints();
+}
+
+/* HANGMAN */
+
+const words=["galaxy","quantum","arcade","nebula"];
+let chosenWord="";
+let guessed=[];
+let mistakes=0;
+
+function startHangman(){
+if(points<2){alert("Need 2 TPoints!");return;}
+points-=2;
+updatePoints();
+
+chosenWord=words[Math.floor(Math.random()*words.length)];
+guessed=[];
+mistakes=0;
+drawHangman();
+displayWord();
+createLetters();
+}
+
+function displayWord(){
+word.innerText=chosenWord.split("").map(l=>guessed.includes(l)?l:"_").join(" ");
+}
+
+function createLetters(){
+letters.innerHTML="";
+"abcdefghijklmnopqrstuvwxyz".split("").forEach(l=>{
+let btn=document.createElement("button");
+btn.innerText=l;
+btn.onclick=()=>guess(l);
+letters.appendChild(btn);
+});
+}
+
+function guess(letter){
+guessed.push(letter);
+if(!chosenWord.includes(letter)){
+mistakes++;
+drawHangman();
+}
+displayWord();
+checkWin();
+}
+
+function checkWin(){
+if(!word.innerText.includes("_")){
+points+=15;
+updatePoints();
+hangResult.innerText="YOU WIN! +15 TPoints!";
+setTimeout(startHangman,1500);
+}
+}
+
+function drawHangman(){
+let c = canvas.getContext("2d");
+c.clearRect(0,0,200,250);
+
+c.lineWidth = 5;
+c.strokeStyle = "#00c3ff";
+
+c.beginPath();
+
+// Base
+c.moveTo(10,230);
+c.lineTo(190,230);
+
+// Pole
+c.moveTo(50,230);
+c.lineTo(50,20);
+
+// Top beam
+c.lineTo(130,20);
+c.lineTo(130,50);
+
+c.stroke();
+
+// Head
+if(mistakes>0){
+c.beginPath();
+c.arc(130,75,25,0,Math.PI*2);
+c.stroke();
+}
+
+// Body
+if(mistakes>1){
+c.beginPath();
+c.moveTo(130,100);
+c.lineTo(130,170);
+c.stroke();
+}
+
+// Left Arm
+if(mistakes>2){
+c.beginPath();
+c.moveTo(130,120);
+c.lineTo(95,150);
+c.stroke();
+}
+
+// Right Arm
+if(mistakes>3){
+c.beginPath();
+c.moveTo(130,120);
+c.lineTo(165,150);
+c.stroke();
+}
+
+// Left Leg
+if(mistakes>4){
+c.beginPath();
+c.moveTo(130,170);
+c.lineTo(100,210);
+c.stroke();
+}
+
+// Right Leg
+if(mistakes>5){
+c.beginPath();
+c.moveTo(130,170);
+c.lineTo(160,210);
+c.stroke();
+}
+}
+startHangman();
+
+/* RIDDLE */
+
+const riddles=[
+{q:"I speak without a mouth and hear without ears. What am I?",a:"echo"},
+{q:"What has keys but can't open locks?",a:"piano"},
+{q:"What runs but never walks?",a:"water"}
+];
+
+let currentRiddle=riddles[Math.floor(Math.random()*riddles.length)];
+riddleText.innerText=currentRiddle.q;
+
+function checkRiddle(){
+let ans=riddleInput.value.toLowerCase();
+if(ans===currentRiddle.a){
+points+=20;
+riddleResult.innerText="Correct! The answer is "+currentRiddle.a+"! +20 TPoints!";
+}else{
+riddleResult.innerText="Wrong! The correct answer was "+currentRiddle.a;
+}
+updatePoints();
+riddleInput.value="";
+}
+
+updatePoints();
+
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker Registered"));
+}
+</script>
+</body>
+</html>
